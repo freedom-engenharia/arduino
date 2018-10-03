@@ -4,24 +4,41 @@
 
 #pragma once
 
+#include <stdlib.h>  // size_t
+
 #include "JsonFloat.hpp"
 #include "JsonInteger.hpp"
 
 namespace ArduinoJson {
-
-// Forward declarations
-class JsonArray;
-class JsonObject;
-
 namespace Internals {
-// A union that defines the actual content of a JsonVariant.
+struct JsonObjectData {
+  struct Slot* head;
+  struct Slot* tail;
+};
+
+struct JsonArrayData {
+  struct Slot* head;
+  struct Slot* tail;
+};
+
+struct RawData {
+  const char* data;
+  size_t size;
+};
+
+// A union that defines the actual content of a JsonVariantData.
 // The enum JsonVariantType determines which member is in use.
 union JsonVariantContent {
-  JsonFloat asFloat;     // used for double and float
-  JsonUInt asInteger;    // used for bool, char, short, int and longs
-  const char* asString;  // asString can be null
-  JsonArray* asArray;    // asArray cannot be null
-  JsonObject* asObject;  // asObject cannot be null
+  JsonFloat asFloat;
+  JsonUInt asInteger;
+  JsonArrayData asArray;
+  JsonObjectData asObject;
+  const char* asString;
+  struct {
+    const char* data;
+    size_t size;
+  } asRaw;
 };
-}
-}
+
+}  // namespace Internals
+}  // namespace ArduinoJson
