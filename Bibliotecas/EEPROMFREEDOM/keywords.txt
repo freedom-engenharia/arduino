@@ -1,6 +1,7 @@
 EEPROMFREEDOM KEYWORD1
 
 escreveStatusNaEEPROM KEYWORD2
+escreveInteiroDe2BytesNaEEPROM KEYWORD2
 verificaSeOValorEIgualNoEndereco KEYWORD2
 escreveDateTimeNaEEPROM KEYWORD2
 leStatusNaEEPROM KEYWORD2
