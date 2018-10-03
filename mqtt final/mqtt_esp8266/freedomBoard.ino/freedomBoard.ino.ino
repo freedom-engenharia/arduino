@@ -23,10 +23,10 @@ EEPROMFREEDOM _ePFreedom;
 //############ 1.. CONFIGURAÇÃO MQTT
 const char* BROKER_MQTT = "test.mosquitto.org"; //URL DO SERVIDOR MQTT
 int BROKER_PORT = 1883;                      // Porta do Broker MQTT
-#define ID_MQTT  "FREEDOMBOARD0002"             //ID DO DISPOSITIVO PARA MQTT, DEVE SER ÚNICO
-const char * TOPIC_SUBSCRIBE1 = "FREEDOMBOARD/ESCUTA/MSG/FREEDOMBOARD0002";   //TÓPICO QUE O DISPOSITIVO SE ESCREVE, DEVE SOLOCAR O TÓPICO NO MQTT.CONECT() PARA FUNCIONAR
-const char * TOPIC_SUBSCRIBE2 = "FREEDOMBOARD/ESCUTA/GETALL/FREEDOMBOARD0002";   //TÓPICO QUE O DISPOSITIVO SE ESCREVE  DEVE SOLOCAR O TÓPICO NO MQTT.CONECT() PARA FUNCIONAR
-const char * TOPIC_SUBSCRIBE3 = "FREEDOMBOARD/ESCUTA/UPDATE/FREEDOMBOARD0002";
+#define ID_MQTT  "FREEDOMBOARD0003"             //ID DO DISPOSITIVO PARA MQTT, DEVE SER ÚNICO
+const char * TOPIC_SUBSCRIBE1 = "FREEDOMBOARD/ESCUTA/MSG/FREEDOMBOARD0003";   //TÓPICO QUE O DISPOSITIVO SE ESCREVE, DEVE SOLOCAR O TÓPICO NO MQTT.CONECT() PARA FUNCIONAR
+const char * TOPIC_SUBSCRIBE2 = "FREEDOMBOARD/ESCUTA/GETALL/FREEDOMBOARD0003";   //TÓPICO QUE O DISPOSITIVO SE ESCREVE  DEVE SOLOCAR O TÓPICO NO MQTT.CONECT() PARA FUNCIONAR
+const char * TOPIC_SUBSCRIBE3 = "FREEDOMBOARD/ESCUTA/UPDATE/FREEDOMBOARD0003";
 #define TOPIC_PUBLISH "FREEDOMBOARD/RESPOSTA/GETALL/ANGULAR"  //TÓPICO QUE O DISPOSITIVO RESPONDE
 
 //############ .. DEFINIÇÃO DO TIPO DA PLACA
@@ -34,7 +34,7 @@ const int TIPO = 1;
 
 //############ 2.. CONFIGURAÇÃO EEPROM               
 int ENDERECO_STATUS_EEPROM = 0;  //ENDEREÇO NA EEPROM ONDE O VALOR DO STATUS ESTA SALVO
-int STATUS_DEVICE = 0;    //VARIÁVEL QUE ARMAZENA STATUS DO DISPOSITIVO "QUANDO O DISPOSITIVO FOR LIGADO"
+int STATUS_LED_PLACA = 0;    //VARIÁVEL QUE ARMAZENA STATUS DO DISPOSITIVO "QUANDO O DISPOSITIVO FOR LIGADO"
 
 int ENDERECO_STATUS_RELE_01_EEPROM = 2;
 int ENDERECO_STATUS_RELE_02_EEPROM = 4;
@@ -76,7 +76,7 @@ void setup() {
 
 //############ 5.. COLETANDO DADOS SALVOS NA EEPROM  
   EEPROM.begin(MEM_ALOC_SIZE); 
-  STATUS_DEVICE = _ePFreedom.leStatusNaEEPROM(ENDERECO_STATUS_EEPROM); //VERIFICA ÚLTIMO ESTADO SALVO NA EEPROM
+  STATUS_LED_PLACA = _ePFreedom.leStatusNaEEPROM(ENDERECO_STATUS_EEPROM); //VERIFICA ÚLTIMO ESTADO SALVO NA EEPROM
   DATA_ULTIMA_MODIFICACAO = _ePFreedom.leDateTimeNaEEPROM(ENDERECO_DATA_ULTIMA_MODIFICACAO); //VERIFICA ÚLTIMA SALVA DATA NA EEPROM
 
 
@@ -84,7 +84,7 @@ void setup() {
 
 //pinMode(LED_PLACA, OUTPUT); 
 
-  digitalWrite(LED_PLACA, STATUS_DEVICE);  //
+  digitalWrite(LED_PLACA, STATUS_LED_PLACA);  //
 
 
 //############ 7.. CONECTA NA REDE WIFI 
@@ -138,7 +138,7 @@ void informaStatusEDataDeModificacao(){
   Serial.println(mac);     
   
   Serial.println("Status Atualizado:   ");
-  Serial.println(getStatusForApi(STATUS_DEVICE));
+  Serial.println(getStatusForApi(STATUS_LED_PLACA));
   
   Serial.println("Data atualizada:   ");
   Serial.println(DATA_ULTIMA_MODIFICACAO);
@@ -187,7 +187,8 @@ if (strcmp(topic, TOPIC_SUBSCRIBE3)==0){ // SE O CANAL QUE OUVE MSG RECEBIDA FOR
       Serial.println("Parsing failed");
       return;
      }
-
+     
+int ledPlaca = parsed["ledPlaca"];
 int statusRele01 = parsed["statusRele01"];
 int statusRele02 = parsed["statusRele02"];
 int statusRele03 = parsed["statusRele03"];
@@ -198,6 +199,8 @@ STATUS_RELE_02 = statusRele02;
 STATUS_RELE_03 = statusRele03;
 STATUS_RELE_04 = statusRele04;
 
+
+mudaEstadoLedPlaca(ledPlaca);
         
         responseGetAllMQTT();    
             
@@ -254,15 +257,13 @@ void responseGetAllMQTT(){
      root["id"] = id;  
      root["tipo"] = TIPO; 
      root["statusDevice"] = String(getStatusForApi(_ePFreedom.leStatusNaEEPROM(ENDERECO_STATUS_EEPROM)));
-     root["ledPlaca"] = String(LED_PLACA);
+     root["ledPlaca"] = STATUS_LED_PLACA;
      root["dataUltimaModificacao"] = DATA_ULTIMA_MODIFICACAO;
      root["statusRele01"] = STATUS_RELE_01;
      root["statusRele02"] = STATUS_RELE_02;
      root["statusRele03"] = STATUS_RELE_03;
      root["statusRele04"] = STATUS_RELE_04;
-     root["topicoUpdateDevice"] = TOPIC_SUBSCRIBE3;
-
-      
+     root["topicoUpdateDevice"] = TOPIC_SUBSCRIBE3;    
      
      JsonArray& sensor01 = root.createNestedArray("sensor01");
       sensor01.add(NOME_SENSOR_O1);
@@ -305,4 +306,17 @@ void mqttReconnect(){
     conectaMQTT();
   }
 }
+
+void mudaEstadoLedPlaca(int novoEstado){
+
+  if(STATUS_LED_PLACA == novoEstado){
+    return;
+    }
+    
+    if(STATUS_LED_PLACA != novoEstado){   
+      STATUS_LED_PLACA = novoEstado;
+      digitalWrite(LED_PLACA, STATUS_LED_PLACA);
+      return;
+    }
+  }
 
