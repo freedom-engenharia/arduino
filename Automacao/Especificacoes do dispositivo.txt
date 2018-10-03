@@ -1,0 +1,21 @@
+							### Especificações do dispositivo ###
+
+
+### Características:
+	1. O dispositivo deve se conectar a rede Wifi, de forma automática.
+	2. O dispositivo deve ter uma identificação única, Modelo + tipo + numero de série ex: Wemos d1 modulo relé 00001 (WEMRE00001).
+	3. O dispositivo deve guardar o ultimo estado quando for desligado estados:(ligado ou desligado).
+	4. O dispositivo deve ter um IP fixo.
+
+### Comunicação:
+	2. O dispositivo deve se comunicar via Mqtt com servidor eclipse (Grátis) https://iot.eclipse.org/getting-started/.
+	   serve: iot.eclipse.org   Porta: 1883.
+	3. O dispositivo deve se comunicar com uma api dia http.   
+	4. O dispositivo deve se comunicar com uma api dia mqtt.
+	5. O dispositivo deve receber comando via IP(rede local).
+
+### Implementações:
+	1. O dispositivo deve guardar o a data e hora da última modificação do estado (na EEPROM) em modo dateTime (2018-10-02%12:12:55).
+	2. O dispositivo deve guardar o modelo (item 3) na EEPROM.
+
+### Outros:
