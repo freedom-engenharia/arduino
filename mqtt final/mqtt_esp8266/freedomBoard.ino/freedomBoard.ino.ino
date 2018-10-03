@@ -261,6 +261,8 @@ void responseGetAllMQTT(){
      root["statusRele03"] = STATUS_RELE_03;
      root["statusRele04"] = STATUS_RELE_04;
      root["topicoUpdateDevice"] = TOPIC_SUBSCRIBE3;
+
+      
      
      JsonArray& sensor01 = root.createNestedArray("sensor01");
       sensor01.add(NOME_SENSOR_O1);
