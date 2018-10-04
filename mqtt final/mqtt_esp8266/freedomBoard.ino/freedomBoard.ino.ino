@@ -7,10 +7,9 @@
                 #include <WiFiServer.h>
                 #include <EEPROM.h>   
                 #include <PubSubClient.h>     
-                #include <ArduinoJson.h>        
+                #include <ArduinoJson.h>    // precisa ser versão 5     
                 #include <EEPROMFREEDOM.h>
                 #include <ConverteStringFreedom.h>
-                #include "Timer.h"
                 
                 #define MEM_ALOC_SIZE 512
                 
@@ -23,10 +22,10 @@ EEPROMFREEDOM _ePFreedom;
 //############ 1.. CONFIGURAÇÃO MQTT
 const char* BROKER_MQTT = "test.mosquitto.org"; //URL DO SERVIDOR MQTT
 int BROKER_PORT = 1883;                      // Porta do Broker MQTT
-#define ID_MQTT  "FREEDOMBOARD0003"             //ID DO DISPOSITIVO PARA MQTT, DEVE SER ÚNICO
-const char * TOPIC_SUBSCRIBE1 = "FREEDOMBOARD/ESCUTA/MSG/FREEDOMBOARD0003";   //TÓPICO QUE O DISPOSITIVO SE ESCREVE, DEVE SOLOCAR O TÓPICO NO MQTT.CONECT() PARA FUNCIONAR
-const char * TOPIC_SUBSCRIBE2 = "FREEDOMBOARD/ESCUTA/GETALL/FREEDOMBOARD0003";   //TÓPICO QUE O DISPOSITIVO SE ESCREVE  DEVE SOLOCAR O TÓPICO NO MQTT.CONECT() PARA FUNCIONAR
-const char * TOPIC_SUBSCRIBE3 = "FREEDOMBOARD/ESCUTA/UPDATE/FREEDOMBOARD0003";
+#define ID_MQTT  "FREEDOMBOARD0002"             //ID DO DISPOSITIVO PARA MQTT, DEVE SER ÚNICO
+const char * TOPIC_SUBSCRIBE1 = "FREEDOMBOARD/ESCUTA/MSG/FREEDOMBOARD0002";   //TÓPICO QUE O DISPOSITIVO SE ESCREVE, DEVE SOLOCAR O TÓPICO NO MQTT.CONECT() PARA FUNCIONAR
+const char * TOPIC_SUBSCRIBE2 = "FREEDOMBOARD/ESCUTA/GETALL/FREEDOMBOARD0002";   //TÓPICO QUE O DISPOSITIVO SE ESCREVE  DEVE SOLOCAR O TÓPICO NO MQTT.CONECT() PARA FUNCIONAR
+const char * TOPIC_SUBSCRIBE3 = "FREEDOMBOARD/ESCUTA/UPDATE/FREEDOMBOARD0002";
 #define TOPIC_PUBLISH "FREEDOMBOARD/RESPOSTA/GETALL/ANGULAR"  //TÓPICO QUE O DISPOSITIVO RESPONDE
 
 //############ .. DEFINIÇÃO DO TIPO DA PLACA
@@ -188,7 +187,7 @@ if (strcmp(topic, TOPIC_SUBSCRIBE3)==0){ // SE O CANAL QUE OUVE MSG RECEBIDA FOR
       return;
      }
      
-int ledPlaca = parsed["ledPlaca"];
+int novoEstadoLedPlaca = parsed["ledPlaca"];
 int statusRele01 = parsed["statusRele01"];
 int statusRele02 = parsed["statusRele02"];
 int statusRele03 = parsed["statusRele03"];
@@ -200,7 +199,7 @@ STATUS_RELE_03 = statusRele03;
 STATUS_RELE_04 = statusRele04;
 
 
-mudaEstadoLedPlaca(ledPlaca);
+mudaEstadoLedPlaca(novoEstadoLedPlaca);
         
         responseGetAllMQTT();    
             
@@ -319,4 +318,3 @@ void mudaEstadoLedPlaca(int novoEstado){
       return;
     }
   }
-
