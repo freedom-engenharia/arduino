@@ -12,7 +12,7 @@
                 #include <ConverteStringFreedom.h>
                
                 
-                ///#define MEM_ALOC_SIZE 512
+                #define MEM_ALOC_SIZE 512
                 
 WiFiServer server(80);
 WiFiClient espClient;
@@ -27,7 +27,9 @@ int BROKER_PORT = 1883;                      // Porta do Broker MQTT
 const char * TOPIC_SUBSCRIBE1 = "FREEDOMBOARD/ESCUTA/MSG/FREEDOMBOARD0003";   //TÓPICO QUE O DISPOSITIVO SE ESCREVE, DEVE SOLOCAR O TÓPICO NO MQTT.CONECT() PARA FUNCIONAR
 const char * TOPIC_SUBSCRIBE2 = "FREEDOMBOARD/ESCUTA/GETALL/FREEDOMBOARD0003";   //TÓPICO QUE O DISPOSITIVO SE ESCREVE  DEVE SOLOCAR O TÓPICO NO MQTT.CONECT() PARA FUNCIONAR
 const char * TOPIC_SUBSCRIBE3 = "FREEDOMBOARD/ESCUTA/UPDATE/FREEDOMBOARD0003";
-#define TOPIC_PUBLISH "FREEDOMBOARD/RESPOSTA/GETALL/ANGULAR"  //TÓPICO QUE O DISPOSITIVO RESPONDE
+#define TOPIC_PUBLISH_ANGULAR "FREEDOMBOARD/RESPOSTA/GETALL/ANGULAR"  //TÓPICO QUE O DISPOSITIVO RESPONDE
+#define TOPIC_PUBLISH_API "FREEDOMBOARD/RESPOSTA/GETALL/API"  //TÓPICO QUE O DISPOSITIVO RESPONDE
+
 
 //############ .. DEFINIÇÃO DO TIPO DA PLACA
 const int TIPO = 1;
@@ -234,7 +236,7 @@ if(strcmp(topic, TOPIC_SUBSCRIBE1)==0){
        if (msg == "1" || msg.indexOf("1") != -1) {
        digitalWrite(LED_PLACA, LOW);
        _ePFreedom.escreveStatusNaEEPROM(ENDERECO_STATUS_EEPROM, 0);  //Salvando status na EEPROM
-       //MQTT.publish(TOPIC_PUBLISH, "ligado"); 
+       //MQTT.publish(TOPIC_PUBLISH_ANGULAR, "ligado"); 
        responseGetAllMQTT();
     }
 
@@ -242,7 +244,7 @@ if(strcmp(topic, TOPIC_SUBSCRIBE1)==0){
        digitalWrite(LED_PLACA, HIGH);
        _ePFreedom.escreveStatusNaEEPROM(ENDERECO_STATUS_EEPROM, 1);  //Salvando status na EEPROM
        responseGetAllMQTT();
-       //MQTT.publish(TOPIC_PUBLISH, "desligado");
+       //MQTT.publish(TOPIC_PUBLISH_ANGULAR, "desligado");
     }
 
     if (msg == "status" || msg.indexOf("status") != -1) {
@@ -252,7 +254,7 @@ if(strcmp(topic, TOPIC_SUBSCRIBE1)==0){
        s = String(_ePFreedom.leStatusNaEEPROM(ENDERECO_STATUS_EEPROM));
        s.toCharArray(c,2);
        responseGetAllMQTT();
-       //MQTT.publish(TOPIC_PUBLISH, c);
+       //MQTT.publish(TOPIC_PUBLISH_ANGULAR, c);
     }
 }
 
@@ -297,7 +299,9 @@ void responseGetAllMQTT(){
 
      root.printTo(JSONmessageBuffer, sizeof(JSONmessageBuffer)); // CONVERT O JSON CRIADO PARA O CHAR CRIADO
 
-      MQTT.publish(TOPIC_PUBLISH, JSONmessageBuffer);  //PUBLICA JSON, LEMBRANDO QUE DEVE MUDAR O TAMANHO DO BUFFER NA BIBLIOTECA.H DO MQTT "TEM Q PESQUISAR, EU ESQUECI ;D"
+      MQTT.publish(TOPIC_PUBLISH_ANGULAR, JSONmessageBuffer);  //PUBLICA JSON, LEMBRANDO QUE DEVE MUDAR O TAMANHO DO BUFFER NA BIBLIOTECA.H DO MQTT "TEM Q PESQUISAR, EU ESQUECI ;D"
+      MQTT.publish(TOPIC_PUBLISH_API, JSONmessageBuffer);
+      
 
 }
 
