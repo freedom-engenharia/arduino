@@ -10,9 +10,9 @@
                 #include <ArduinoJson.h>        
                 #include <EEPROMFREEDOM.h>
                 #include <ConverteStringFreedom.h>
-                #include "Timer.h"
+               
                 
-                #define MEM_ALOC_SIZE 512
+                ///#define MEM_ALOC_SIZE 512
                 
 WiFiServer server(80);
 WiFiClient espClient;
@@ -21,12 +21,12 @@ ConverteStringFreedom _stringFreedom;
 EEPROMFREEDOM _ePFreedom;
 
 //############ 1.. CONFIGURAÇÃO MQTT
-const char* BROKER_MQTT = "test.mosquitto.org"; //URL DO SERVIDOR MQTT
+const char* BROKER_MQTT = "broker.hivemq.com"; //URL DO SERVIDOR MQTT
 int BROKER_PORT = 1883;                      // Porta do Broker MQTT
-#define ID_MQTT  "FREEDOMBOARD0001"             //ID DO DISPOSITIVO PARA MQTT, DEVE SER ÚNICO
-const char * TOPIC_SUBSCRIBE1 = "FREEDOMBOARD/ESCUTA/MSG/FREEDOMBOARD0001";   //TÓPICO QUE O DISPOSITIVO SE ESCREVE, DEVE SOLOCAR O TÓPICO NO MQTT.CONECT() PARA FUNCIONAR
-const char * TOPIC_SUBSCRIBE2 = "FREEDOMBOARD/ESCUTA/GETALL/FREEDOMBOARD0001";   //TÓPICO QUE O DISPOSITIVO SE ESCREVE  DEVE SOLOCAR O TÓPICO NO MQTT.CONECT() PARA FUNCIONAR
-const char * TOPIC_SUBSCRIBE3 = "FREEDOMBOARD/ESCUTA/UPDATE/FREEDOMBOARD0001";
+#define ID_MQTT  "FREEDOMBOARD0003"             //ID DO DISPOSITIVO PARA MQTT, DEVE SER ÚNICO
+const char * TOPIC_SUBSCRIBE1 = "FREEDOMBOARD/ESCUTA/MSG/FREEDOMBOARD0003";   //TÓPICO QUE O DISPOSITIVO SE ESCREVE, DEVE SOLOCAR O TÓPICO NO MQTT.CONECT() PARA FUNCIONAR
+const char * TOPIC_SUBSCRIBE2 = "FREEDOMBOARD/ESCUTA/GETALL/FREEDOMBOARD0003";   //TÓPICO QUE O DISPOSITIVO SE ESCREVE  DEVE SOLOCAR O TÓPICO NO MQTT.CONECT() PARA FUNCIONAR
+const char * TOPIC_SUBSCRIBE3 = "FREEDOMBOARD/ESCUTA/UPDATE/FREEDOMBOARD0003";
 #define TOPIC_PUBLISH "FREEDOMBOARD/RESPOSTA/GETALL/ANGULAR"  //TÓPICO QUE O DISPOSITIVO RESPONDE
 
 //############ .. DEFINIÇÃO DO TIPO DA PLACA
@@ -60,19 +60,38 @@ float VALOR_SENSOR_01 = 34.5;
 
 
 
-//############ MODELO DO OBJETO
+//############ id
 
 String id = ID_MQTT;
 
 
+//############ INTERRUPÇÃO
+extern "C"{
+#include "user_interface.h"
+}
+os_timer_t mTimer;
+bool       _timeout = false;
+//Nunca execute nada na interrupcao, apenas setar flags!
+void tCallback(void *tCall){
+    _timeout = true;
+}
+void usrInit(void){
+    os_timer_setfn(&mTimer, tCallback, NULL);
+    os_timer_arm(&mTimer, 10000, true);
+}
+
+
 void setup() {
 
+    usrInit();
+
     pinMode(LED_PLACA, OUTPUT);
-  
-  
+   
   Serial.begin(115200);
   WiFiManager wifiManager;
   wifiManager.setTimeout(180);
+
+  //wifiManager.resetSettings();
 
 //############ 5.. COLETANDO DADOS SALVOS NA EEPROM  
   EEPROM.begin(MEM_ALOC_SIZE); 
@@ -114,7 +133,7 @@ void setup() {
 void loop() {
 //############ 11.. CONECTA MQTT, FICA ESCUTANDO MSG
   mqttReconnect();
-  responseGetAllMQTT();
+  
   delay(600);
   MQTT.loop();
   yield();
@@ -124,7 +143,15 @@ if(VALOR_SENSOR_01 <= 50.0){
   }
 if(VALOR_SENSOR_01 >= 49.0){
   VALOR_SENSOR_01 = 0;
-  }  
+  } 
+
+  
+//INTERRUPÇÃO
+     if (_timeout){
+      Serial.println("10s, responde GetAll");
+      responseGetAllMQTT();
+      _timeout = false;
+  }
 
   
 }
@@ -303,4 +330,3 @@ void mqttReconnect(){
     conectaMQTT();
   }
 }
-
