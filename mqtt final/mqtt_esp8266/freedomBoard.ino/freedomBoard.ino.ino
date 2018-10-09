@@ -19,20 +19,22 @@ WiFiClient espClient;
 PubSubClient MQTT(espClient);
 ConverteStringFreedom _stringFreedom;
 EEPROMFREEDOM _ePFreedom;
+WiFiManager wifiManager;
 
 //############ 1.. CONFIGURAÇÃO MQTT
 const char* BROKER_MQTT = "broker.hivemq.com"; //URL DO SERVIDOR MQTT
 int BROKER_PORT = 1883;                      // Porta do Broker MQTT
-#define ID_MQTT  "FREEDOMBOARD0002"             //ID DO DISPOSITIVO PARA MQTT, DEVE SER ÚNICO
-const char * TOPIC_SUBSCRIBE1 = "FREEDOMBOARD/ESCUTA/MSG/FREEDOMBOARD0002";   //TÓPICO QUE O DISPOSITIVO SE ESCREVE, DEVE SOLOCAR O TÓPICO NO MQTT.CONECT() PARA FUNCIONAR
-const char * TOPIC_SUBSCRIBE2 = "FREEDOMBOARD/ESCUTA/GETALL/FREEDOMBOARD0002";   //TÓPICO QUE O DISPOSITIVO SE ESCREVE  DEVE SOLOCAR O TÓPICO NO MQTT.CONECT() PARA FUNCIONAR
-const char * TOPIC_SUBSCRIBE3 = "FREEDOMBOARD/ESCUTA/UPDATE/FREEDOMBOARD0002";
+#define ID_MQTT  "FREEDOMBOARD0003"             //ID DO DISPOSITIVO PARA MQTT, DEVE SER ÚNICO
+const char * TOPIC_SUBSCRIBE1 = "FREEDOMBOARD/ESCUTA/MSG/FREEDOMBOARD0003";   //TÓPICO QUE O DISPOSITIVO SE ESCREVE, DEVE SOLOCAR O TÓPICO NO MQTT.CONECT() PARA FUNCIONAR
+const char * TOPIC_SUBSCRIBE2 = "FREEDOMBOARD/ESCUTA/GETALL/FREEDOMBOARD0003";   //TÓPICO QUE O DISPOSITIVO SE ESCREVE  DEVE SOLOCAR O TÓPICO NO MQTT.CONECT() PARA FUNCIONAR
+const char * TOPIC_SUBSCRIBE3 = "FREEDOMBOARD/ESCUTA/UPDATE/FREEDOMBOARD0003";
 #define TOPIC_PUBLISH_ANGULAR "FREEDOMBOARD/RESPOSTA/GETALL/ANGULAR"  //TÓPICO QUE O DISPOSITIVO RESPONDE
 #define TOPIC_PUBLISH_API "FREEDOMBOARD/RESPOSTA/GETALL/API"  //TÓPICO QUE O DISPOSITIVO RESPONDE
 
 
 //############ .. DEFINIÇÃO DO TIPO DA PLACA
 const int TIPO = 1;
+const String NOME = "Freedom Board 03";
 
 //############ 2.. CONFIGURAÇÃO EEPROM               
 int ENDERECO_STATUS_EEPROM = 0;  //ENDEREÇO NA EEPROM ONDE O VALOR DO STATUS ESTA SALVO
@@ -79,7 +81,7 @@ void tCallback(void *tCall){
 }
 void usrInit(void){
     os_timer_setfn(&mTimer, tCallback, NULL);
-    os_timer_arm(&mTimer, 10000, true);
+    os_timer_arm(&mTimer, 15000, true);
 }
 
 
@@ -87,11 +89,11 @@ void setup() {
 
     usrInit();
 
-    pinMode(LED_PLACA, OUTPUT);
+  pinMode(LED_PLACA, OUTPUT);
    
   Serial.begin(115200);
-  WiFiManager wifiManager;
-  wifiManager.setTimeout(180);
+  
+  wifiManager.setTimeout(30);
 
   //wifiManager.resetSettings();
 
@@ -103,13 +105,13 @@ void setup() {
 
 //############ 6.. INICIALIZANDO PINOS, CONFORME CONGIGURAÇÃO ==> 3 <==
 
-//pinMode(LED_PLACA, OUTPUT); 
 
   digitalWrite(LED_PLACA, STATUS_DEVICE);  //
 
 
 //############ 7.. CONECTA NA REDE WIFI 
-  if(!wifiManager.autoConnect("AutoConnectAP")) {
+ 
+  if(!wifiManager.autoConnect("FreedomBoard")) {
     Serial.println("failed to connect and hit timeout");
     delay(3000);
     ESP.reset();
@@ -133,12 +135,14 @@ void setup() {
 }
 
 void loop() {
+
+
 //############ 11.. CONECTA MQTT, FICA ESCUTANDO MSG
-  mqttReconnect();
+    mqttReconnect();
+    MQTT.loop();
+    yield();
+
   
-  delay(600);
-  MQTT.loop();
-  yield();
   ///// teste simula sensor de temperatura
 if(VALOR_SENSOR_01 <= 50.0){
   VALOR_SENSOR_01 = (VALOR_SENSOR_01 + 1.0);
@@ -146,15 +150,15 @@ if(VALOR_SENSOR_01 <= 50.0){
 if(VALOR_SENSOR_01 >= 49.0){
   VALOR_SENSOR_01 = 0;
   } 
+ //Serial.println(VALOR_SENSOR_01);
 
   
 //INTERRUPÇÃO
      if (_timeout){
-      Serial.println("10s, responde GetAll");
+      Serial.println("15 segundos, responde GetAll");
       responseGetAllMQTT();
       _timeout = false;
   }
-
   
 }
 
@@ -286,6 +290,7 @@ void responseGetAllMQTT(){
 
      //CRIAÇÃO DO JSON E SUAS PROPRIEDADES
      root["id"] = id;  
+     root["nome"] = NOME;
      root["tipo"] = TIPO; 
      root["ledPlaca"] = _ePFreedom.leStatusNaEEPROM(ENDERECO_STATUS_EEPROM);
      root["dataUltimaModificacao"] = DATA_ULTIMA_MODIFICACAO;
@@ -325,9 +330,21 @@ void conectaMQTT() {
             Serial.println("Noo foi possivel se conectar ao broker.");
             Serial.println("Nova tentatica de conexao em 2s");
             delay(2000);
+            reconectaWiFi();
         }
     }
 }
+
+void reconectaWiFi(){
+    WiFiClient client = server.available();
+  if (!client) {
+    return;
+  }
+  Serial.println("Nova conexao requisitada...");
+  while(!client.available()){
+    delay(1);
+  }
+ }
 
 
 //############ 17. RECONECTA AO MQTT
@@ -337,4 +354,11 @@ void mqttReconnect(){
     Serial.println("Conectando..");
     conectaMQTT();
   }
+}
+
+void resetaConfiguracaoWiFI(void) {
+  //Reset das definicoes de rede
+  wifiManager.resetSettings();
+  delay(1500);
+  ESP.reset();
 }
