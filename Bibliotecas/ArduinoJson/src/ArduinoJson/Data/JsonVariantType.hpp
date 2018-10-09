@@ -5,23 +5,23 @@
 #pragma once
 
 namespace ArduinoJson {
+class JsonArray;
+class JsonObject;
 
 namespace Internals {
 
 // Enumerated type to know the current type of a JsonVariant.
 // The value determines which member of JsonVariantContent is used.
 enum JsonVariantType {
-  JSON_NULL,
-  JSON_LINKED_RAW,
-  JSON_OWNED_RAW,
-  JSON_LINKED_STRING,
-  JSON_OWNED_STRING,
-  JSON_BOOLEAN,
-  JSON_POSITIVE_INTEGER,
-  JSON_NEGATIVE_INTEGER,
-  JSON_ARRAY,
-  JSON_OBJECT,
-  JSON_FLOAT
+  JSON_UNDEFINED,         // JsonVariant has not been initialized
+  JSON_UNPARSED,          // JsonVariant contains an unparsed string
+  JSON_STRING,            // JsonVariant stores a const char*
+  JSON_BOOLEAN,           // JsonVariant stores a bool
+  JSON_POSITIVE_INTEGER,  // JsonVariant stores an JsonUInt
+  JSON_NEGATIVE_INTEGER,  // JsonVariant stores an JsonUInt that must be negated
+  JSON_ARRAY,             // JsonVariant stores a pointer to a JsonArray
+  JSON_OBJECT,            // JsonVariant stores a pointer to a JsonObject
+  JSON_FLOAT              // JsonVariant stores a JsonFloat
 };
-}  // namespace Internals
-}  // namespace ArduinoJson
+}
+}
