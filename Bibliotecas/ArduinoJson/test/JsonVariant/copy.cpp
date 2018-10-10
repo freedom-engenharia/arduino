@@ -5,80 +5,60 @@
 #include <ArduinoJson.h>
 #include <catch.hpp>
 
-TEST_CASE("JsonVariant::set(JsonVariant)") {
-  DynamicJsonDocument doc1;
-  DynamicJsonDocument doc2;
-  JsonVariant var1 = doc1.to<JsonVariant>();
-  JsonVariant var2 = doc2.to<JsonVariant>();
+TEST_CASE("JsonVariant copy") {
+  DynamicJsonBuffer _jsonBuffer;
+  JsonVariant _variant1;
+  JsonVariant _variant2;
 
-  SECTION("stores JsonArray by copy") {
-    JsonArray arr = doc2.to<JsonArray>();
+  SECTION("IntegersAreCopiedByValue") {
+    _variant1 = 123;
+    _variant2 = _variant1;
+    _variant1 = 456;
 
-    arr.add(42);
-    var1.set(doc2.as<JsonVariant>());
-    arr[0] = 666;
-
-    REQUIRE(var1.as<std::string>() == "[42]");
+    REQUIRE(123 == _variant2.as<int>());
   }
 
-  SECTION("stores JsonObject by copy") {
-    JsonObject obj = doc2.to<JsonObject>();
+  SECTION("DoublesAreCopiedByValue") {
+    _variant1 = 123.45;
+    _variant2 = _variant1;
+    _variant1 = 456.78;
 
-    obj["value"] = 42;
-    var1.set(doc2.as<JsonVariant>());
-    obj["value"] = 666;
-
-    REQUIRE(var1.as<std::string>() == "{\"value\":42}");
+    REQUIRE(123.45 == _variant2.as<double>());
   }
 
-  SECTION("stores const char* by reference") {
-    var1.set("hello!!");
-    var2.set(var1);
+  SECTION("BooleansAreCopiedByValue") {
+    _variant1 = true;
+    _variant2 = _variant1;
+    _variant1 = false;
 
-    REQUIRE(doc1.memoryUsage() == 0);
-    REQUIRE(doc2.memoryUsage() == 0);
+    REQUIRE(_variant2.as<bool>());
   }
 
-  SECTION("stores char* by copy") {
-    char str[] = "hello!!";
+  SECTION("StringsAreCopiedByValue") {
+    _variant1 = "hello";
+    _variant2 = _variant1;
+    _variant1 = "world";
 
-    var1.set(str);
-    var2.set(var1);
-
-    REQUIRE(doc1.memoryUsage() == 8);
-    REQUIRE(doc2.memoryUsage() == 8);
+    REQUIRE(std::string("hello") == _variant2.as<const char *>());
   }
 
-  SECTION("stores std::string by copy") {
-    var1.set(std::string("hello!!"));
-    var2.set(var1);
+  SECTION("ObjectsAreCopiedByReference") {
+    JsonObject &object = _jsonBuffer.createObject();
 
-    REQUIRE(doc1.memoryUsage() == 8);
-    REQUIRE(doc2.memoryUsage() == 8);
+    _variant1 = object;
+
+    object["hello"] = "world";
+
+    REQUIRE(1 == _variant1.as<JsonObject>().size());
   }
 
-  SECTION("stores Serialized<const char*> by reference") {
-    var1.set(serialized("hello!!", 8));
-    var2.set(var1);
+  SECTION("ArraysAreCopiedByReference") {
+    JsonArray &array = _jsonBuffer.createArray();
 
-    REQUIRE(doc1.memoryUsage() == 0);
-    REQUIRE(doc2.memoryUsage() == 0);
-  }
+    _variant1 = array;
 
-  SECTION("stores Serialized<char*> by copy") {
-    char str[] = "hello!!";
-    var1.set(serialized(str, 8));
-    var2.set(var1);
+    array.add("world");
 
-    REQUIRE(doc1.memoryUsage() == 8);
-    REQUIRE(doc2.memoryUsage() == 8);
-  }
-
-  SECTION("stores Serialized<std::string> by copy") {
-    var1.set(serialized(std::string("hello!!!")));
-    var2.set(var1);
-
-    REQUIRE(doc1.memoryUsage() == 8);
-    REQUIRE(doc2.memoryUsage() == 8);
+    REQUIRE(1 == _variant1.as<JsonArray>().size());
   }
 }
