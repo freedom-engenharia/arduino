@@ -289,7 +289,7 @@ void responseGetAllMQTT(){
       char JSONmessageBuffer[350]; //CRIA UM CHAR PARA COLOCAR O JSON
 
      //CRIAÇÃO DO JSON E SUAS PROPRIEDADES
-     root["id"] = id;  
+     //root["id"] = id;  
      root["nome"] = NOME;
      root["tipo"] = TIPO; 
      root["ledPlaca"] = _ePFreedom.leStatusNaEEPROM(ENDERECO_STATUS_EEPROM);
