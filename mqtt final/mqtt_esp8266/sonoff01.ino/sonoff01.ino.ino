@@ -27,7 +27,7 @@ const char * ID_MQTT =  "ab5e7bd5-8ff8-40eb-8b20-a89a7d82716c" ;            //ID
 const char * TOPIC_SUBSCRIBEGETALL = "S1R/ESCUTA/GETALL/";   //TÓPICO QUE O DISPOSITIVO SE ESCREVE  DEVE SOLOCAR O TÓPICO NO MQTT.CONECT() PARA FUNCIONAR
 const char * TOPIC_SUBSCRIBEGETTHIS = "S1R/ESCUTA/GETALL/ab5e7bd5-8ff8-40eb-8b20-a89a7d82716c";
 const char * TOPIC_SUBSCRIBEUPDATE = "S1R/ESCUTA/UPDATE/ab5e7bd5-8ff8-40eb-8b20-a89a7d82716c" ;
-#define TOPIC_PUBLISH_ANGULAR "S1R/RESPOSTA/GETALL/ANGULAR"  //TÓPICO QUE O DISPOSITIVO RESPONDE
+#define TOPIC_PUBLISH_ANGULAR "FREEDOM/RESPOSTA/GETALL/ANGULAR"  //TÓPICO QUE O DISPOSITIVO RESPONDE
 #define TOPIC_PUBLISH_API "S1R/RESPOSTA/GETALL/API"  //TÓPICO QUE O DISPOSITIVO RESPONDE
 
 
@@ -43,7 +43,7 @@ String DATA_ULTIMA_MODIFICACAO = "";  // VARIÁVEL QUE ARMAZENA O VALOR DA DATA 
 const String ID = String(ID_MQTT);
 const String TIPO = "S1R";
 const String NOME = "Sonoff 1 Relé";
-const String TOPICO_RECEBE_UPDATE = String(TOPIC_SUBSCRIBEUPDATE);
+const String TOPICOMQTTESCUTAUPDATE = String(TOPIC_SUBSCRIBEUPDATE);
 const int LED_PLACA = 13; 
 //STATUS_RELE;
 const int RELE = 12;
@@ -63,7 +63,7 @@ void tCallback(void *tCall){
 }
 void usrInit(void){
     os_timer_setfn(&mTimer, tCallback, NULL);
-    os_timer_arm(&mTimer, 15000, true);
+    os_timer_arm(&mTimer, 5000, true);
 }
 
 
@@ -146,14 +146,14 @@ if (strcmp(topic, TOPIC_SUBSCRIBEUPDATE)==0){ // SE O CANAL QUE OUVE MSG RECEBID
      }
 
 //Atualizando led da placa
-int ledPlaca = parsed ["ledPlaca"];
+int ledPlaca = parsed ["statusLedPlaca"];
     digitalWrite(LED_PLACA, ledPlaca);
 
 //Atualizando Status rele
 int statusRele = parsed["statusRele"];
-STATUS_RELE = statusRele01;
+STATUS_RELE = statusRele;
 digitalWrite(STATUS_RELE, statusRele);
-_ePFreedom.escreveStatusNaEEPROM(ENDERECO_STATUS_RELE_01_EEPROM, statusRele01);
+_ePFreedom.escreveStatusNaEEPROM(ENDERECO_STATUS_RELE_01_EEPROM, statusRele);
         
         responseGetAllMQTT();    
             
@@ -185,9 +185,9 @@ void responseGetAllMQTT(){
      root["id"] = ID;  
      root["nome"] = NOME;
      root["tipo"] = TIPO; 
-     root["ledPlaca"] = _ePFreedom.leStatusNaEEPROM(ENDERECO_STATUS_EEPROM);
+     root["statusLedPlaca"] = _ePFreedom.leStatusNaEEPROM(ENDERECO_STATUS_EEPROM);
      root["statusRele"] = STATUS_RELE;
-     root["topicoUpdateDevice"] = TOPIC_SUBSCRIBEUPDATE;
+     root["topicoMQTTEscutaUpdate"] = TOPIC_SUBSCRIBEUPDATE;
      
     // JsonArray& sensor01 = root.createNestedArray("sensor01");
      // sensor01.add(NOME_SENSOR_O1);
