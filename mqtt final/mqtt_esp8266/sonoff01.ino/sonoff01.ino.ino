@@ -24,10 +24,13 @@ WiFiManager wifiManager;
 const char* BROKER_MQTT = "broker.hivemq.com"; //URL DO SERVIDOR MQTT
 int BROKER_PORT = 1883;                      // Porta do Broker MQTT
 const char * ID_MQTT =  "ab5e7bd5-8ff8-40eb-8b20-a89a7d82716c" ;            //ID DO DISPOSITIVO PARA MQTT, DEVE SER ÚNICO
-const char * TOPIC_SUBSCRIBEGETALL = "S1R/ESCUTA/GETALL/";   //TÓPICO QUE O DISPOSITIVO SE ESCREVE  DEVE SOLOCAR O TÓPICO NO MQTT.CONECT() PARA FUNCIONAR
+//const char * TOPIC_SUBSCRIBEGETALL = "S1R/ESCUTA/GETALL/";   //TÓPICO QUE O DISPOSITIVO SE ESCREVE  DEVE SOLOCAR O TÓPICO NO MQTT.CONECT() PARA FUNCIONAR
+
+const char * TOPIC_SUBSCRIBEGETALLPOREMPRESA = "DEVICE/GETALLPOREMPRESAID/3606c707-3382-4ced-93ab-b46b3b9acf08";
+
 const char * TOPIC_SUBSCRIBEGETTHIS = "S1R/ESCUTA/GETALL/ab5e7bd5-8ff8-40eb-8b20-a89a7d82716c";
 const char * TOPIC_SUBSCRIBEUPDATE = "S1R/ESCUTA/UPDATE/ab5e7bd5-8ff8-40eb-8b20-a89a7d82716c" ;
-#define TOPIC_PUBLISH_ANGULAR "FREEDOM/RESPOSTA/GETALL/ANGULAR"  //TÓPICO QUE O DISPOSITIVO RESPONDE
+#define TOPIC_PUBLISH_ANGULAR "FREEDOM/RESPOSTA/GETALL/ANGULAR/3606c707-3382-4ced-93ab-b46b3b9acf08"  //TÓPICO QUE O DISPOSITIVO RESPONDE
 #define TOPIC_PUBLISH_API "S1R/RESPOSTA/GETALL/API"  //TÓPICO QUE O DISPOSITIVO RESPONDE
 
 
@@ -40,6 +43,8 @@ int ENDERECO_DATA_ULTIMA_MODIFICACAO = 10;  //ENDEREÇO NA EEPROM DA DATA DE ULT
 String DATA_ULTIMA_MODIFICACAO = "";  // VARIÁVEL QUE ARMAZENA O VALOR DA DATA DA ÚLTIMA MODIFICAÇÃO DO DISPOSITIVO
                
 //-------------MODELO
+const String EMPRESA_ID = "3606c707-3382-4ced-93ab-b46b3b9acf08";
+
 const String ID = String(ID_MQTT);
 const String TIPO = "S1R";
 const String NOME = "Sonoff 1 Relé";
@@ -63,7 +68,7 @@ void tCallback(void *tCall){
 }
 void usrInit(void){
     os_timer_setfn(&mTimer, tCallback, NULL);
-    os_timer_arm(&mTimer, 5000, true);
+    os_timer_arm(&mTimer, 60000, true);
 }
 
 
@@ -160,16 +165,14 @@ _ePFreedom.escreveStatusNaEEPROM(ENDERECO_STATUS_RELE_01_EEPROM, statusRele);
   }
 
 
-if(strcmp(topic, TOPIC_SUBSCRIBEGETALL)==0){
+if(strcmp(topic, TOPIC_SUBSCRIBEGETALLPOREMPRESA)==0){
   Serial.println("GetAll solicitado");
-if(msg == "GETALL" || msg.indexOf("GETALL") != -1){
-
-      
-      responseGetAllMQTT();
-      
+  responseGetAllMQTT();
+if(msg == "GETALL" || msg.indexOf("GETALL") != -1){            
    } 
 
 }
+
 }
 
 
@@ -182,6 +185,7 @@ void responseGetAllMQTT(){
       char JSONmessageBuffer[350]; //CRIA UM CHAR PARA COLOCAR O JSON
 
      //CRIAÇÃO DO JSON E SUAS PROPRIEDADES
+     root["empresaId"] = EMPRESA_ID;
      root["id"] = ID;  
      root["nome"] = NOME;
      root["tipo"] = TIPO; 
@@ -211,8 +215,9 @@ void conectaMQTT() {
         Serial.println(BROKER_MQTT);
         if (MQTT.connect(ID_MQTT)) {
             Serial.println("Conectado ao Broker com sucesso!");
-            MQTT.subscribe(TOPIC_SUBSCRIBEGETALL);
+            //MQTT.subscribe(TOPIC_SUBSCRIBEGETALL);
             MQTT.subscribe(TOPIC_SUBSCRIBEUPDATE);
+            MQTT.subscribe(TOPIC_SUBSCRIBEGETALLPOREMPRESA);
         } 
         else {
             Serial.println("Noo foi possivel se conectar ao broker.");
