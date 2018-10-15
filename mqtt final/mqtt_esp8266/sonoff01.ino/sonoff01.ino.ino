@@ -26,11 +26,11 @@ int BROKER_PORT = 1883;                      // Porta do Broker MQTT
 const char * ID_MQTT =  "ab5e7bd5-8ff8-40eb-8b20-a89a7d82716c" ;            //ID DO DISPOSITIVO PARA MQTT, DEVE SER ÚNICO
 //const char * TOPIC_SUBSCRIBEGETALL = "S1R/ESCUTA/GETALL/";   //TÓPICO QUE O DISPOSITIVO SE ESCREVE  DEVE SOLOCAR O TÓPICO NO MQTT.CONECT() PARA FUNCIONAR
 
-const char * TOPIC_SUBSCRIBEGETALLPOREMPRESA = "DEVICE/GETALLPOREMPRESAID/3606c707-3382-4ced-93ab-b46b3b9acf08";
+const char * TOPIC_SUBSCRIBEGETALLPOREMPRESA = "DEVICE/GETALLPOREMPRESAID/3606c707-3382-4ced-93ab-b46b3b9acf08";  //ID DA EMPRESA
 
-const char * TOPIC_SUBSCRIBEGETTHIS = "S1R/ESCUTA/GETALL/ab5e7bd5-8ff8-40eb-8b20-a89a7d82716c";
-const char * TOPIC_SUBSCRIBEUPDATE = "S1R/ESCUTA/UPDATE/ab5e7bd5-8ff8-40eb-8b20-a89a7d82716c" ;
-#define TOPIC_PUBLISH_ANGULAR "FREEDOM/RESPOSTA/GETALL/ANGULAR/3606c707-3382-4ced-93ab-b46b3b9acf08"  //TÓPICO QUE O DISPOSITIVO RESPONDE
+const char * TOPIC_SUBSCRIBEGETTHIS = "S1R/ESCUTA/GETALL/ab5e7bd5-8ff8-40eb-8b20-a89a7d82716c";  //ID DO DEVICE
+const char * TOPIC_SUBSCRIBEUPDATE = "S1R/ESCUTA/UPDATE/ab5e7bd5-8ff8-40eb-8b20-a89a7d82716c" ;  //ID DO DEVICE
+#define TOPIC_PUBLISH_ANGULAR "FREEDOM/RESPOSTA/GETALL/ANGULAR/3606c707-3382-4ced-93ab-b46b3b9acf08"  //TÓPICO QUE O DISPOSITIVO RESPONDE ID DA EMPRESA
 #define TOPIC_PUBLISH_API "S1R/RESPOSTA/GETALL/API"  //TÓPICO QUE O DISPOSITIVO RESPONDE
 
 
@@ -43,11 +43,11 @@ int ENDERECO_DATA_ULTIMA_MODIFICACAO = 10;  //ENDEREÇO NA EEPROM DA DATA DE ULT
 String DATA_ULTIMA_MODIFICACAO = "";  // VARIÁVEL QUE ARMAZENA O VALOR DA DATA DA ÚLTIMA MODIFICAÇÃO DO DISPOSITIVO
                
 //-------------MODELO
-const String EMPRESA_ID = "3606c707-3382-4ced-93ab-b46b3b9acf08";
+const String EMPRESA_ID = "3606c707-3382-4ced-93ab-b46b3b9acf08"; //ID DA EMPRESA
 
 const String ID = String(ID_MQTT);
 const String TIPO = "S1R";
-const String NOME = "Sonoff 1 Relé";
+const String NOME = "Alarmes";
 const String TOPICOMQTTESCUTAUPDATE = String(TOPIC_SUBSCRIBEUPDATE);
 const int LED_PLACA = 13; 
 //STATUS_RELE;
@@ -71,15 +71,18 @@ void usrInit(void){
     os_timer_arm(&mTimer, 60000, true);
 }
 
-
 void setup() {
 
     usrInit();
-
+   
   pinMode(LED_PLACA, OUTPUT);
+  pinMode(RELE, OUTPUT);
   
   DATA_ULTIMA_MODIFICACAO = _ePFreedom.leDateTimeNaEEPROM(ENDERECO_DATA_ULTIMA_MODIFICACAO); //VERIFICA ÚLTIMA SALVA DATA NA EEPROM
   STATUS_RELE = _ePFreedom.leStatusNaEEPROM(ENDERECO_STATUS_RELE_01_EEPROM);
+
+  digitalWrite(RELE, STATUS_RELE);
+  
   Serial.begin(115200);
   
   wifiManager.setTimeout(30);
@@ -88,7 +91,7 @@ void setup() {
 
 //############ 7.. CONECTA NA REDE WIFI 
  
-  if(!wifiManager.autoConnect("FreedomBoard")) {
+  if(!wifiManager.autoConnect("SONOFF")) {
     Serial.println("failed to connect and hit timeout");
     delay(3000);
     ESP.reset();
@@ -108,7 +111,6 @@ void setup() {
 }
 
 void loop() {
-
 
 //############ 11.. CONECTA MQTT, FICA ESCUTANDO MSG
     mqttReconnect();
@@ -152,12 +154,13 @@ if (strcmp(topic, TOPIC_SUBSCRIBEUPDATE)==0){ // SE O CANAL QUE OUVE MSG RECEBID
 
 //Atualizando led da placa
 int ledPlaca = parsed ["statusLedPlaca"];
-    digitalWrite(LED_PLACA, ledPlaca);
+    digitalWrite(LED_PLACA, ledPlaca); 
 
 //Atualizando Status rele
 int statusRele = parsed["statusRele"];
 STATUS_RELE = statusRele;
-digitalWrite(STATUS_RELE, statusRele);
+digitalWrite(RELE, statusRele);
+digitalWrite(LED_PLACA, statusRele);
 _ePFreedom.escreveStatusNaEEPROM(ENDERECO_STATUS_RELE_01_EEPROM, statusRele);
         
         responseGetAllMQTT();    
@@ -229,8 +232,11 @@ void conectaMQTT() {
 }
 
 void reconectaWiFi(){
+  
+
     WiFiClient client = server.available();
   if (!client) {
+    Serial.println("Tentando reconectar...");
     return;
   }
   Serial.println("Nova conexao requisitada...");
