@@ -152,18 +152,13 @@ if (strcmp(topic, TOPIC_SUBSCRIBEUPDATE)==0){ // SE O CANAL QUE OUVE MSG RECEBID
       return;
      }
 
-//Atualizando led da placa
-int ledPlaca = parsed ["statusLedPlaca"];
-    digitalWrite(LED_PLACA, ledPlaca); 
 
 //Atualizando Status rele
-int statusRele = parsed["statusRele"];
-STATUS_RELE = statusRele;
-digitalWrite(RELE, statusRele);
-digitalWrite(LED_PLACA, statusRele);
-_ePFreedom.escreveStatusNaEEPROM(ENDERECO_STATUS_RELE_01_EEPROM, statusRele);
+STATUS_RELE = parsed["statusRele"];
+
+mudaEstadoRele(STATUS_RELE);
+responseGetAllMQTT();  
         
-        responseGetAllMQTT();    
             
   }
 
@@ -189,10 +184,10 @@ void responseGetAllMQTT(){
 
      //CRIAÇÃO DO JSON E SUAS PROPRIEDADES
      root["empresaId"] = EMPRESA_ID;
-     root["id"] = ID;  
+     root["id"] = ID;
      root["nome"] = NOME;
      root["tipo"] = TIPO; 
-     root["statusLedPlaca"] = _ePFreedom.leStatusNaEEPROM(ENDERECO_STATUS_EEPROM);
+     //root["statusLedPlaca"] = _ePFreedom.leStatusNaEEPROM(ENDERECO_STATUS_EEPROM);
      root["statusRele"] = STATUS_RELE;
      root["topicoMQTTEscutaUpdate"] = TOPIC_SUBSCRIBEUPDATE;
      
@@ -261,3 +256,17 @@ void resetaConfiguracaoWiFI(void) {
   delay(1500);
   ESP.reset();
 }
+
+void mudaEstadoRele(int valor){
+  if(valor == 1){
+    digitalWrite(RELE, LOW);
+    digitalWrite(LED_PLACA, LOW);
+    Serial.println("Relé ligado");
+    }
+  if(valor == 0){
+    digitalWrite(RELE, HIGH);
+    digitalWrite(LED_PLACA, HIGH);
+    Serial.println("Relé desligado");    
+    }  
+  _ePFreedom.escreveStatusNaEEPROM(ENDERECO_STATUS_RELE_01_EEPROM, valor);  
+  }  
