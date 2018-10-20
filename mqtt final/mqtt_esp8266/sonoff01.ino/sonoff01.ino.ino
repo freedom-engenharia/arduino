@@ -17,6 +17,7 @@ PubSubClient MQTT(espClient);
 ConverteStringFreedom _stringFreedom;
 EEPROMFREEDOM _ePFreedom;
 WiFiManager wifiManager;
+WiFiClient client = server.available();
 
 //############ VARIÁVEIS GLOBAIS
 
@@ -54,7 +55,7 @@ const int LED_PLACA = 13;
 const int RELE = 12;
 const int BOTAO = 0;
 const int PINOIO = 14;
-
+int ESTADOBOTAO;
 
 //############ INTERRUPÇÃO
 extern "C"{
@@ -74,7 +75,8 @@ void usrInit(void){
 void setup() {
 
     usrInit();
-   
+//resetaConfiguracaoWiFI();
+  pinMode(BOTAO, INPUT);
   pinMode(LED_PLACA, OUTPUT);
   pinMode(RELE, OUTPUT);
   
@@ -85,17 +87,16 @@ void setup() {
   
   Serial.begin(115200);
   
-  wifiManager.setTimeout(30);
+  wifiManager.setTimeout(10);
 
   //wifiManager.resetSettings(); 
 
 //############ 7.. CONECTA NA REDE WIFI 
  
-  if(!wifiManager.autoConnect("SONOFF")) {
+  if(!wifiManager.autoConnect("Freedom")) {
     Serial.println("failed to connect and hit timeout");
-    delay(3000);
+    delay(1000);
     ESP.reset();
-    delay(5000);
   } 
 
   Serial.println("connected...yeey :)");
@@ -110,19 +111,23 @@ void setup() {
   Serial.println("Servidor HTTP inicializado");
 }
 
-void loop() {
-
+void loop() {  
 //############ 11.. CONECTA MQTT, FICA ESCUTANDO MSG
     mqttReconnect();
     MQTT.loop();
     yield();  
 //INTERRUPÇÃO
-     if (_timeout){
-      Serial.println("15 segundos, responde GetAll");
-      responseGetAllMQTT();
-      _timeout = false;
+
+if(!MQTT.connected()){
+  Serial.print("Sem internet");
+  }
+     if (_timeout){      
+              Serial.println("60 segundos, responde GetAll");
+              responseGetAllMQTT();
+              _timeout = false;          
   }
   
+pushBotao();
 }
 
 //############ 14.. RECEBE MSG E JSON PELO TÓPICOS MQTT
@@ -219,8 +224,8 @@ void conectaMQTT() {
         } 
         else {
             Serial.println("Noo foi possivel se conectar ao broker.");
-            Serial.println("Nova tentatica de conexao em 2s");
-            delay(2000);
+            Serial.println("Nova tentatica de conexao em 0,5 s");
+            delay(500);
             reconectaWiFi();
         }
     }
@@ -228,14 +233,17 @@ void conectaMQTT() {
 
 void reconectaWiFi(){
   
-
-    WiFiClient client = server.available();
+    
   if (!client) {
     Serial.println("Tentando reconectar...");
+    pushBotao();
+    yield();
     return;
   }
   Serial.println("Nova conexao requisitada...");
   while(!client.available()){
+    pushBotao();
+    yield();
     delay(1);
   }
  }
@@ -262,11 +270,41 @@ void mudaEstadoRele(int valor){
     digitalWrite(RELE, LOW);
     digitalWrite(LED_PLACA, LOW);
     Serial.println("Relé ligado");
+    STATUS_RELE = 1;
     }
   if(valor == 0){
     digitalWrite(RELE, HIGH);
     digitalWrite(LED_PLACA, HIGH);
-    Serial.println("Relé desligado");    
+    Serial.println("Relé desligado");
+    STATUS_RELE = 0;    
     }  
   _ePFreedom.escreveStatusNaEEPROM(ENDERECO_STATUS_RELE_01_EEPROM, valor);  
   }  
+
+void pushBotao(){
+    ESTADOBOTAO = digitalRead(BOTAO);
+  if(ESTADOBOTAO == LOW){
+  Serial.println("Apertou o botão");
+  botaoApertado();
+  delay(20);
+  
+  }
+  
+  }
+
+
+void botaoApertado(){
+      int estadoAtual = digitalRead(RELE);
+      Serial.println("Valor atual");
+      Serial.println(estadoAtual);
+      if(estadoAtual == LOW)
+      {
+        mudaEstadoRele(0);
+        delay(500);
+        }
+      if(estadoAtual == HIGH)
+      {
+        mudaEstadoRele(1);
+        delay(500);
+        }
+  }    
